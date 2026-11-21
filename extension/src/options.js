@@ -22,6 +22,12 @@
 
   function save() { return api.storage.local.set({ blaikhole: settings }); }
 
+  // "Amazon AI (Rufus and AI slop)" -> { main: "Amazon AI", detail: "Rufus and AI slop" }
+  function splitName(name) {
+    const m = /^(.*?)\s*\((.*)\)\s*$/.exec(name || "");
+    return m ? { main: m[1], detail: m[2] } : { main: name || "", detail: "" };
+  }
+
   function renderLists() {
     const host = $("lists");
     host.textContent = "";
@@ -31,11 +37,23 @@
       const cb = document.createElement("input");
       cb.type = "checkbox";
       cb.checked = listOn(l);
+      cb.setAttribute("aria-label", l.name || l.id);
       cb.addEventListener("change", () => { settings.enabled[l.id] = cb.checked; save(); });
-      const span = document.createElement("span");
-      span.textContent = l.name || l.id;
+      const { main, detail } = splitName(l.name || l.id);
+      const txt = document.createElement("span");
+      txt.className = "txt";
+      const mEl = document.createElement("span");
+      mEl.className = "main";
+      mEl.textContent = main;
+      txt.appendChild(mEl);
+      if (detail) {
+        const dEl = document.createElement("span");
+        dEl.className = "detail";
+        dEl.textContent = detail;
+        txt.appendChild(dEl);
+      }
       row.appendChild(cb);
-      row.appendChild(span);
+      row.appendChild(txt);
       host.appendChild(row);
     }
   }
@@ -71,10 +89,10 @@
       const num = $("hero-num"), label = $("hero-label");
       if (lifetime > 0) {
         num.textContent = lifetime.toLocaleString();
-        label.textContent = lifetime === 1 ? "AI thing blocked so far" : "AI things blocked so far";
+        label.textContent = lifetime === 1 ? "AI thing blocked" : "AI things blocked";
       } else {
-        num.textContent = "On";
-        label.textContent = "You are protected";
+        num.textContent = "0";
+        label.textContent = "Nothing to block yet. That is good.";
       }
     };
     try {
