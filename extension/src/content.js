@@ -16,7 +16,8 @@
 
   // Defaults until storage resolves: every recommended list on, mode = hide.
   // `allow` is a per-site whitelist: { "<host>": ["<listId>", ...] } = let that surface through here.
-  let settings = { mode: "hide", enabled: {}, custom: [], allow: {} };
+  // `paused` is a per-site master off: { "<host>": true } = do nothing on this site at all.
+  let settings = { mode: "hide", enabled: {}, custom: [], allow: {}, paused: {} };
 
   // What is blocked on this page right now, deterministically: the distinct elements the active rules
   // match, attributed to the list that caught them, so the UI can name the surfaces ("Google AI
@@ -36,11 +37,28 @@
     return Array.isArray(a) && a.indexOf(l.id) !== -1;
   }
 
+  // Match a host against a list `match` token at a LABEL BOUNDARY, so "google." does not match
+  // "notgoogle.com". Two styles: a trailing-dot token ("google.") = a registrable label, matched
+  // anywhere at a boundary (google.com, google.co.uk, www.google.com); a full domain ("youtube.com")
+  // = the host equals it or is a subdomain of it.
+  function hostMatches(h, m) {
+    if (!m) return false;
+    h = String(h).toLowerCase();
+    m = String(m).toLowerCase();
+    if (m.charAt(m.length - 1) === ".") return ("." + h).indexOf("." + m) !== -1;
+    return h === m || h.endsWith("." + m);
+  }
+
   function matchesHost(l) {
-    return (l.match || []).some(m => host.includes(m));
+    return (l.match || []).some(m => hostMatches(host, m));
+  }
+
+  function pausedHere() {
+    return !!(settings.paused && settings.paused[host]);
   }
 
   function activeLists() {
+    if (pausedHere()) return [];
     return LIST.lists.filter(l => listOn(l) && !allowedHere(l) && matchesHost(l));
   }
 
@@ -91,9 +109,20 @@
       "border-radius:4px;letter-spacing:.04em;pointer-events:none;}";
   }
 
+  // A single invalid selector in a comma list drops the WHOLE CSS rule, so one typo (or a bad custom
+  // list) would disable all hiding. Validate each selector and keep only the good ones.
+  function validSelector(s) {
+    try {
+      if (typeof CSS !== "undefined" && CSS.supports && CSS.supports("selector(*)")) {
+        return CSS.supports("selector(" + s + ")");
+      }
+    } catch (e) { /* fall through to the DOM check */ }
+    try { document.querySelector(s); return true; } catch (e) { return false; }
+  }
+
   function buildCss(lists, mode) {
     const sels = [];
-    for (const l of lists) for (const c of (l.css || [])) if (c) sels.push(c);
+    for (const l of lists) for (const c of (l.css || [])) if (c && validSelector(c)) sels.push(c);
     let css = badgeCss();
     if (!sels.length) return css;
     const sel = sels.join(",\n");
@@ -295,6 +324,7 @@
       settings.enabled = s.enabled || settings.enabled;
       settings.custom = Array.isArray(s.custom) ? s.custom : settings.custom;
       settings.allow = (s.allow && typeof s.allow === "object") ? s.allow : settings.allow;
+      settings.paused = (s.paused && typeof s.paused === "object") ? s.paused : settings.paused;
     }
     // 2. Source-level block now that settings are known: only redirects lists that are active here
     //    (honors disable + per-site whitelist), so it never fights a whitelist or loops. The
@@ -344,7 +374,7 @@
   try {
     if (typeof window !== "undefined" && typeof window.__BLAIKHOLE_EXPOSE__ === "function") {
       window.__BLAIKHOLE_EXPOSE__({
-        redirectTarget, activeLists,
+        redirectTarget, activeLists, hostMatches,
         getBlockedCount: () => lastBlocked.total,
         getBlockedDetail: () => lastBlocked,
       });

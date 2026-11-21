@@ -69,7 +69,7 @@ h1 { margin: 0; font-size: 27px; font-weight: 800; letter-spacing: .01em; }
 }
 .status {
   display: inline-flex; align-items: center; gap: 8px;
-  font-size: 12.5px; font-weight: 700; letter-spacing: .01em;
+  font-size: 13px; font-weight: 700; letter-spacing: .01em;
   color: var(--ok);
   background: color-mix(in srgb, var(--ok) 15%, transparent);
   padding: 6px 13px; border-radius: 999px; margin-bottom: 14px;
@@ -117,6 +117,15 @@ h1 { margin: 0; font-size: 27px; font-weight: 800; letter-spacing: .01em; }
   box-shadow: 0 8px 20px color-mix(in srgb, var(--accent) 35%, transparent);
 }
 .sharemsg { margin-top: 11px; color: var(--ok); font-size: 13px; font-weight: 700; }
+.btn-ghost { background: transparent; color: var(--ink); border-color: var(--line); box-shadow: none; }
+.btn-ghost:hover { background: color-mix(in srgb, var(--accent) 10%, transparent); filter: none; }
+
+/* pause-on-this-site control */
+.pausebar { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.pausebar #pause-label { font-size: 14.5px; font-weight: 600; }
+.pausebar.paused { border-color: color-mix(in srgb, #e0a44a 55%, var(--line)); background: color-mix(in srgb, #e0a44a 12%, var(--card)); }
+.pausebar.paused #pause-label { color: #e0a44a; }
+.pausebar #pause-btn { padding: 10px 16px; }
 
 /* cards */
 .card {
@@ -129,7 +138,7 @@ h1 { margin: 0; font-size: 27px; font-weight: 800; letter-spacing: .01em; }
 h2 { margin: 0 0 4px; font-size: 16px; font-weight: 700; }
 h3 { margin: 16px 0 8px; font-size: 14px; font-weight: 700; }
 h3:first-child { margin-top: 4px; }
-.hint { color: var(--muted); font-size: 13px; margin: 0 0 10px; }
+.hint { color: var(--muted); font-size: 14px; margin: 0 0 10px; }
 
 /* toggle rows (the list switches) */
 .toggles { display: grid; gap: 2px; }
@@ -140,7 +149,7 @@ h3:first-child { margin-top: 4px; }
 .toggle:hover { background: color-mix(in srgb, var(--accent) 9%, transparent); }
 .toggle .txt { flex: 1; order: 1; display: grid; gap: 2px; }
 .toggle .txt .main { font-size: 15px; font-weight: 600; }
-.toggle .txt .detail { font-size: 12.5px; color: var(--muted); }
+.toggle .txt .detail { font-size: 13px; color: var(--muted); }
 .toggle > span:not(.txt) { flex: 1; order: 1; font-size: 15px; }
 .toggle input[type=checkbox] {
   appearance: none; -webkit-appearance: none; order: 2; flex: none; margin: 0;
@@ -160,7 +169,7 @@ h3:first-child { margin-top: 4px; }
 summary { cursor: pointer; font-weight: 700; font-size: 15px; list-style: none; min-height: 24px; }
 summary::-webkit-details-marker { display: none; }
 summary::after { content: " +"; color: var(--muted); font-weight: 800; }
-details[open] summary::after { content: " –"; }
+details[open] summary::after { content: " −"; }
 .sub { padding-top: 6px; }
 .modes { display: grid; gap: 4px; }
 .modes label { display: flex; align-items: center; gap: 11px; cursor: pointer; padding: 9px 4px; min-height: 44px; }

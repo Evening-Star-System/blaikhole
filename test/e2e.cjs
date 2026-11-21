@@ -110,6 +110,12 @@ const MOCK = {
   const yw = await nav("https://www.youtube.com/watch?v=x", /never-match/);
   check("youtube whitelisted: AI summary visible again", yw.hidden.yt === false);
 
+  // Pause on this site: the master off switch does nothing at all on that host.
+  await setStorage({ blaikhole: { paused: { "www.google.com": true } } });
+  const gp = await nav("https://www.google.com/search?q=test", /never-match/);
+  check("paused site: not redirected (udm=14 absent)", !/[?&]udm=14/.test(gp.final));
+  check("paused site: AI Overview visible (nothing hidden)", gp.hidden.aiov === false);
+
   check("extension background service worker registered", ctx.serviceWorkers().length >= 1);
 
   await ctx.close();

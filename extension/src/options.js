@@ -11,7 +11,7 @@
   // Blaikhole's page on the Evening Star Productions studio hub. This is the locked canonical URL.
   const SHARE_URL = "https://productions.eveningstar.app/blaikhole";
 
-  let settings = { mode: "hide", enabled: {}, custom: [], allow: {} };
+  let settings = { mode: "hide", enabled: {}, custom: [], allow: {}, paused: {} };
   let lifetime = 0;
   let currentTabId = null;
   let currentHost = "";
@@ -97,6 +97,31 @@
     save().then(reloadTab);
   }
 
+  // Master off for this site: the quick "turn it off here" switch.
+  function pauseHere() {
+    if (!currentHost) return;
+    settings.paused = settings.paused || {};
+    settings.paused[currentHost] = true;
+    save().then(reloadTab);
+  }
+  function resumeHere() {
+    if (!currentHost || !settings.paused) return;
+    delete settings.paused[currentHost];
+    save().then(reloadTab);
+  }
+  function renderPause() {
+    const bar = $("pausebar");
+    if (!bar) return;
+    if (!currentHost) { bar.hidden = true; return; }
+    const paused = !!(settings.paused && settings.paused[currentHost]);
+    bar.classList.toggle("paused", paused);
+    $("pause-label").textContent = paused ? "Blaikhole is paused on this site." : "Blaikhole is on for this site.";
+    const btn = $("pause-btn");
+    btn.textContent = paused ? "Resume here" : "Pause here";
+    btn.onclick = paused ? resumeHere : pauseHere;
+    bar.hidden = false;
+  }
+
   function allowBtn(label, onClick) {
     const b = document.createElement("button");
     b.type = "button";
@@ -167,6 +192,7 @@
       $("hero-sub").textContent = n > 0
         ? (n === 1 ? "1 AI thing blocked here" : n + " AI things blocked here")
         : "Nothing to block on this page";
+      renderPause();
     };
     const ask = (tabId) => {
       const msg = { type: "blaikhole:getDetail" };
@@ -233,6 +259,7 @@
         settings.enabled = s.enabled || {};
         settings.custom = Array.isArray(s.custom) ? s.custom : [];
         settings.allow = (s.allow && typeof s.allow === "object") ? s.allow : {};
+        settings.paused = (s.paused && typeof s.paused === "object") ? s.paused : {};
       }
       renderLists();
       renderMode();

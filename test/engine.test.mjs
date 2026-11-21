@@ -72,6 +72,14 @@ check("multi-param redirect leaves a fully-set url alone",
 check("multi-param redirect fills only the missing param",
   rt && rt("https://duckduckgo.com/?q=cats&assist=false", ddg) === "https://duckduckgo.com/?q=cats&assist=false&kbe=0");
 
+// Host matching must respect label boundaries (no look-alike / phishing false positives).
+const hm = exposed && exposed.hostMatches;
+check("host: www.google.com matches 'google.'", hm && hm("www.google.com", "google.") === true);
+check("host: google.co.uk matches 'google.'", hm && hm("google.co.uk", "google.") === true);
+check("host: notgoogle.com does NOT match 'google.'", hm && hm("notgoogle.com", "google.") === false);
+check("host: www.youtube.com matches 'youtube.com'", hm && hm("www.youtube.com", "youtube.com") === true);
+check("host: youtube.com.evil.com does NOT match 'youtube.com'", hm && hm("youtube.com.evil.com", "youtube.com") === false);
+
 // Blocked counter: #aiov (css match) + #aiwrap (contains match) = 2 distinct surfaces, deduped,
 // and the overreach guard means <body>/<html> are never counted.
 const count = exposed && exposed.getBlockedCount ? exposed.getBlockedCount() : -1;

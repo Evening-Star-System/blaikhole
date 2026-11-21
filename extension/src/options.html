@@ -35,6 +35,11 @@
       <div class="sharemsg" id="share-msg" role="status" hidden>Link copied. Paste it anywhere.</div>
     </section>
 
+    <section class="card pausebar" id="pausebar" hidden>
+      <span id="pause-label">Blaikhole is on for this site.</span>
+      <button id="pause-btn" class="btn btn-ghost" type="button">Pause here</button>
+    </section>
+
     <details class="card blocked" id="blocked-card" open>
       <summary id="blocked-sum">Blocked on this page</summary>
       <ul class="blocklist" id="stat-list"></ul>
@@ -58,7 +63,7 @@
           <label><input type="radio" name="mode" value="label"> <b>Mark</b> it, do not hide</label>
         </div>
         <h3>Add your own lists</h3>
-        <p class="hint">Paste a link to a Blaikhole list. One per line.</p>
+        <p class="hint">Paste a link to a Blaikhole list. One per line. A custom list runs on your pages, so only add lists from people you trust.</p>
         <textarea id="custom" rows="3" placeholder="https://example.com/my-list.json"></textarea>
         <div class="row"><button id="save-custom" type="button" class="btn">Save</button><span id="custom-status"></span></div>
       </div>
