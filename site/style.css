@@ -23,6 +23,9 @@ body {
 }
 a { color: var(--accent); text-decoration: none; }
 a:hover { text-decoration: underline; }
+a:focus-visible, button:focus-visible, .btn:focus-visible {
+  outline: 3px solid var(--accent); outline-offset: 3px; border-radius: 10px; text-decoration: none;
+}
 h1, h2, h3 { letter-spacing: -.02em; line-height: 1.08; margin: 0; }
 section { padding: 92px 24px; }
 .section-title { font-size: 38px; font-weight: 800; text-align: center; }
@@ -106,7 +109,8 @@ section { padding: 92px 24px; }
 .card {
   background: var(--card); border: 1px solid var(--line); border-radius: 18px; padding: 28px;
 }
-.card-ico { font-size: 30px; color: var(--accent); line-height: 1; margin-bottom: 14px; }
+.card-ico { color: var(--accent); line-height: 1; margin-bottom: 14px; }
+.card-ico svg { width: 30px; height: 30px; fill: none; stroke: var(--accent); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 .card h3 { font-size: 21px; font-weight: 700; margin-bottom: 10px; }
 .card p { color: var(--muted); font-size: 16px; margin: 0; }
 
