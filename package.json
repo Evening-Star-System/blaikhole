@@ -6,7 +6,8 @@
   "license": "AGPL-3.0-or-later",
   "scripts": {
     "sync": "bash scripts/sync-list.sh",
-    "test": "node test/engine.test.mjs && node test/capture.test.mjs"
+    "test": "node test/engine.test.mjs && node test/capture.test.mjs",
+    "test:e2e": "node test/e2e.cjs"
   },
   "devDependencies": {
     "jsdom": "^31.0.1"
