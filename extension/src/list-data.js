@@ -4,7 +4,7 @@ window.__BLAIKHOLE_LIST__ = {
   "version": "0.1.0",
   "updated": "2026-11-21",
   "license": "CC-BY-4.0",
-  "homepage": "https://github.com/Evening-Star-System/Blaikhole",
+  "homepage": "https://github.com/Evening-Star-System/blaikhole",
   "note": "Starter rules. Selectors and text anchors must be verified and tuned against each live site; class-name selectors churn and are the ongoing maintenance work. Prefer durable anchors (aria-label, role, stable data-* and visible labels) over class names.",
   "lists": [
     {
