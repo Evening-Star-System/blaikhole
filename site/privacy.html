@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Blaikhole Privacy</title>
+  <meta name="description" content="Blaikhole collects nothing. No account, no tracking, no analytics. Everything stays on your device.">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="nav">
+  <a class="brand" href="/blaikhole">
+    <span class="mark" aria-hidden="true"></span>
+    <span class="wordmark">Bl<span class="ai">AI</span>khole</span>
+  </a>
+  <nav class="navlinks">
+    <a href="/blaikhole">Home</a>
+    <a href="https://github.com/Evening-Star-System/blaikhole" target="_blank" rel="noopener">Source</a>
+  </nav>
+</header>
+
+<main class="legal">
+  <h1>Privacy</h1>
+  <p class="lead">The short version: Blaikhole collects nothing. No account, no tracking, no analytics,
+    no telemetry. There is no server to send anything to, because we never ask for anything.</p>
+
+  <h2>What stays on your device</h2>
+  <p>Your settings (which lists are on, your per-site choices) and the running count of AI surfaces
+    blocked are kept in your browser's own local storage. They never leave your machine, and we never
+    see them. Uninstalling Blaikhole removes them.</p>
+
+  <h2>Network</h2>
+  <p>Blaikhole works offline and makes no calls of its own. The only time it touches the network is:</p>
+  <ul>
+    <li>If <em>you</em> add a custom filter-list URL in the options, it fetches that list from the
+      address you chose. That is your call, and nothing about you is sent with the request.</li>
+    <li>Links you click yourself (the source code, the optional account), which open in a new tab like
+      any other link.</li>
+  </ul>
+
+  <h2>Why it needs the permissions it asks for</h2>
+  <ul>
+    <li><b>Storage</b>: to save your settings and the blocked count on your device.</li>
+    <li><b>Access to the pages you visit</b>: to hide AI surfaces and switch AI off at the URL where a
+      site allows it. It reads page structure locally, in your browser, and sends none of it anywhere.</li>
+    <li><b>Clipboard (write)</b>: only when you press Share, to copy a link.</li>
+  </ul>
+
+  <h2>No selling, no sharing, no third parties</h2>
+  <p>There is no advertising, no data broker, no third-party analytics, and nothing is ever sold or
+    shared. The code is open source under the AGPL, so anyone can verify every one of these claims.</p>
+
+  <h2>Changes and contact</h2>
+  <p>If this policy ever changes, the update will be here with a new date. Questions or concerns can be
+    raised on the <a href="https://github.com/Evening-Star-System/blaikhole" target="_blank" rel="noopener">project on GitHub</a>.</p>
+
+  <p class="legal-foot">Last updated 2026-11-21. Blaikhole is built by Evening Star Productions.</p>
+  <p><a class="back" href="/blaikhole">Back to Blaikhole</a></p>
+</main>
+
+<footer class="foot">
+  <p>Built by <strong>Evening Star Productions</strong>. In service to Life.</p>
+</footer>
+</body>
+</html>
