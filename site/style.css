@@ -184,7 +184,28 @@ section { padding: 92px 24px; }
   .navlinks > a:not(.btn):not(.btn-sm) { display: none; }
   section { padding: 64px 20px; }
 }
+/* micro-interactions (CSS only, no scripts) */
+.cards .card { transition: transform .16s ease, border-color .16s ease, box-shadow .16s ease; }
+.cards .card:hover { transform: translateY(-4px); border-color: color-mix(in srgb, var(--accent) 45%, var(--line)); box-shadow: 0 22px 54px rgba(0,0,0,.4); }
+.chips li { transition: transform .12s ease, border-color .12s ease, color .12s ease; }
+.chips li:not(.more):hover { transform: translateY(-2px); border-color: var(--accent); color: var(--ink); }
+.showcase-shot img { transition: transform .28s ease, box-shadow .28s ease; }
+.showcase-shot img:hover { transform: translateY(-5px) scale(1.012); box-shadow: 0 40px 100px rgba(0,0,0,.55), 0 0 80px rgba(139,108,240,.22); }
+.trust-grid article { transition: transform .16s ease; }
+.trust-grid article:hover { transform: translateY(-3px); }
+
+/* staggered hero entrance */
+@keyframes fadeup { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: none; } }
+.hero .hole, .hero .eyebrow, .hero h1, .hero .lede, .hero .cta, .hero .microtrust { animation: fadeup .6s cubic-bezier(.2,.7,.2,1) both; }
+.hero .eyebrow { animation-delay: .05s; }
+.hero h1 { animation-delay: .12s; }
+.hero .lede { animation-delay: .2s; }
+.hero .cta { animation-delay: .28s; }
+.hero .microtrust { animation-delay: .36s; }
+
 @media (prefers-reduced-motion: reduce) {
   .hole .ring { animation: none; }
   html { scroll-behavior: auto; }
+  .hero .hole, .hero .eyebrow, .hero h1, .hero .lede, .hero .cta, .hero .microtrust { animation: none; }
+  * { transition: none !important; }
 }
