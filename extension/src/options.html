@@ -31,19 +31,21 @@
       <div class="heronum" id="hero-num">0</div>
       <div class="herolabel" id="hero-label">Nothing to block yet. That is good.</div>
       <div class="herosub" id="hero-sub"></div>
-      <ul class="statlist" id="stat-list"></ul>
       <button id="share" class="btn primary" type="button">Share Blaikhole</button>
       <div class="sharemsg" id="share-msg" role="status" hidden>Link copied. Paste it anywhere.</div>
     </section>
 
-    <section class="card">
-      <h2>Turn things off</h2>
-      <p class="hint">All on to start. Tap one to let it back in.</p>
-      <div id="lists" class="toggles"></div>
-    </section>
+    <details class="card blocked" id="blocked-card" open>
+      <summary id="blocked-sum">Blocked on this page</summary>
+      <ul class="blocklist" id="stat-list"></ul>
+      <ul class="blocklist allowed" id="allow-list"></ul>
+      <p class="hint" id="blocked-empty" hidden>Nothing to block on this page. You are good.</p>
+    </details>
 
     <section class="card">
-      <label class="toggle"><input type="checkbox" id="pill-toggle"><span>Show the count on the page (a badge you can screenshot)</span></label>
+      <h2>Turn things off</h2>
+      <p class="hint">All on to start. Tap one to let it back in, everywhere.</p>
+      <div id="lists" class="toggles"></div>
     </section>
 
     <details class="card">

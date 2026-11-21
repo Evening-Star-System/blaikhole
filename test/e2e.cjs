@@ -54,6 +54,16 @@ const MOCK = {
     route.fulfill({ status: 200, contentType: "text/html", body });
   });
 
+  let sw0 = ctx.serviceWorkers();
+  if (!sw0.length) { await ctx.waitForEvent("serviceworker", { timeout: 5000 }).catch(() => {}); sw0 = ctx.serviceWorkers(); }
+  const extId = sw0.length ? sw0[0].url().split("/")[2] : null;
+  const setStorage = async (obj) => {
+    const pg = await ctx.newPage();
+    await pg.goto(`chrome-extension://${extId}/src/options.html`, { waitUntil: "domcontentloaded" });
+    await pg.evaluate((o) => new Promise((r) => chrome.storage.local.set(o, r)), obj);
+    await pg.close();
+  };
+
   const nav = async (url, re) => {
     const p = await ctx.newPage();
     await p.goto(url, { waitUntil: "domcontentloaded", timeout: 15000 }).catch(() => {});
@@ -91,6 +101,14 @@ const MOCK = {
   const y = await nav("https://www.youtube.com/watch?v=x", /never-match/);
   check("youtube: video-summary element hidden via real :has CSS", y.hidden.yt === true);
   check("youtube: real description stays visible", y.hidden.normalVisible === true);
+
+  // Whitelist: allowing a surface on a site must bring the AI back and must NOT loop.
+  await setStorage({ blaikhole: { allow: { "www.google.com": ["google-ai"], "www.youtube.com": ["youtube-ai"] } } });
+  const gw = await nav("https://www.google.com/search?q=test", /never-match/);
+  check("google whitelisted: not redirected (udm=14 absent)", !/[?&]udm=14/.test(gw.final));
+  check("google whitelisted: AI Overview visible again", gw.hidden.aiov === false);
+  const yw = await nav("https://www.youtube.com/watch?v=x", /never-match/);
+  check("youtube whitelisted: AI summary visible again", yw.hidden.yt === false);
 
   check("extension background service worker registered", ctx.serviceWorkers().length >= 1);
 

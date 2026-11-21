@@ -1,17 +1,20 @@
 // Blaikhole popup / options. Reads and writes one settings object:
-//   { mode: "hide"|"dim"|"label", enabled: {listId: bool}, custom: [url], pill: bool }
+//   { mode: "hide"|"dim"|"label", enabled: {listId: bool}, custom: [url], allow: {host:[listId]} }
 // and reads the lifetime stat from { blaikhole_stats: { lifetime } }.
 (() => {
   "use strict";
   const api = (typeof browser !== "undefined" ? browser : chrome);
   const LIST = (window.__BLAIKHOLE_LIST__ && Array.isArray(window.__BLAIKHOLE_LIST__.lists))
     ? window.__BLAIKHOLE_LIST__ : { lists: [] };
+  const nameOf = (id) => { const l = LIST.lists.find((x) => x.id === id); return l ? (l.name || id) : id; };
 
   // Blaikhole's page on the Evening Star Productions studio hub. This is the locked canonical URL.
   const SHARE_URL = "https://productions.eveningstar.app/blaikhole";
 
-  let settings = { mode: "hide", enabled: {}, custom: [], pill: false };
+  let settings = { mode: "hide", enabled: {}, custom: [], allow: {} };
   let lifetime = 0;
+  let currentTabId = null;
+  let currentHost = "";
 
   const $ = (id) => document.getElementById(id);
 
@@ -74,11 +77,44 @@
     });
   }
 
-  function renderPill() {
-    const cb = $("pill-toggle");
-    if (!cb) return;
-    cb.checked = !!settings.pill;
-    cb.addEventListener("change", () => { settings.pill = cb.checked; save(); });
+  function reloadTab() {
+    try { if (currentTabId != null && api.tabs && api.tabs.reload) api.tabs.reload(currentTabId); } catch (e) { /* ignore */ }
+    window.close();
+  }
+
+  // Let a surface through on THIS site only, then reload so it takes effect at once.
+  function allowHere(listId) {
+    if (!currentHost) return;
+    const a = (settings.allow[currentHost] || []).slice();
+    if (a.indexOf(listId) === -1) a.push(listId);
+    settings.allow[currentHost] = a;
+    save().then(reloadTab);
+  }
+  function blockAgain(listId) {
+    if (!currentHost) return;
+    const a = (settings.allow[currentHost] || []).filter((x) => x !== listId);
+    if (a.length) settings.allow[currentHost] = a; else delete settings.allow[currentHost];
+    save().then(reloadTab);
+  }
+
+  function allowBtn(label, onClick) {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "allowbtn";
+    b.textContent = label;
+    b.addEventListener("click", onClick);
+    return b;
+  }
+  function blockedRow(id, rightEl) {
+    const li = document.createElement("li");
+    const nm = document.createElement("span");
+    nm.className = "nm";
+    const { main, detail } = splitName(nameOf(id));
+    const m = document.createElement("span"); m.className = "main"; m.textContent = main; nm.appendChild(m);
+    if (detail) { const d = document.createElement("span"); d.className = "sub"; d.textContent = detail; nm.appendChild(d); }
+    li.appendChild(nm);
+    li.appendChild(rightEl);
+    return li;
   }
 
   // The big number is the lifetime total. At zero we show a calm "protected" state, never a bare 0.
@@ -109,28 +145,28 @@
     if (!api.tabs || !api.tabs.query) return;
     const show = (detail) => {
       if (!detail || typeof detail.total !== "number") return;
+      currentHost = detail.host || "";
       const sources = Array.isArray(detail.sources) ? detail.sources : [];
-      const shown = detail.total + sources.length;
-      $("hero-sub").textContent = shown > 0
-        ? (shown === 1 ? "1 blocked on this page" : shown + " blocked on this page")
+      const byList = detail.byList || {};
+      const blockedIds = Object.keys(byList).sort((a, b) => byList[b] - byList[a]);
+      for (const id of sources) if (!byList[id]) blockedIds.push(id);
+
+      const blockUl = $("stat-list"), allowUl = $("allow-list");
+      blockUl.textContent = ""; allowUl.textContent = "";
+      for (const id of blockedIds) {
+        blockUl.appendChild(blockedRow(id, allowBtn("Allow here", () => allowHere(id))));
+      }
+      const allowed = (currentHost && settings.allow[currentHost]) ? settings.allow[currentHost] : [];
+      for (const id of allowed) {
+        allowUl.appendChild(blockedRow(id, allowBtn("Block again", () => blockAgain(id))));
+      }
+
+      const n = blockedIds.length;
+      $("blocked-sum").textContent = n > 0 ? ("Blocked on this page (" + n + ")") : "Blocked on this page";
+      $("blocked-empty").hidden = (n > 0 || allowed.length > 0);
+      $("hero-sub").textContent = n > 0
+        ? (n === 1 ? "1 AI thing blocked here" : n + " AI things blocked here")
         : "Nothing to block on this page";
-      const ul = $("stat-list");
-      ul.textContent = "";
-      const names = detail.names || {}, byList = detail.byList || {};
-      const ids = Object.keys(byList).sort((a, b) => byList[b] - byList[a]);
-      for (const id of ids) {
-        const li = document.createElement("li");
-        const nm = document.createElement("span"); nm.textContent = names[id] || id;
-        const n = document.createElement("span"); n.className = "n"; n.textContent = String(byList[id]);
-        li.appendChild(nm); li.appendChild(n); ul.appendChild(li);
-      }
-      for (const id of sources) {
-        if (byList[id]) continue;
-        const li = document.createElement("li");
-        const nm = document.createElement("span"); nm.textContent = names[id] || id;
-        const tag = document.createElement("span"); tag.className = "src"; tag.textContent = "blocked at the source";
-        li.appendChild(nm); li.appendChild(tag); ul.appendChild(li);
-      }
     };
     const ask = (tabId) => {
       const msg = { type: "blaikhole:getDetail" };
@@ -139,7 +175,7 @@
       if (r && typeof r.then === "function") r.then(show, () => {});
       else { try { api.tabs.sendMessage(tabId, msg, show); } catch (e) { /* no content script here */ } }
     };
-    const pick = (tabs) => { const t = tabs && tabs[0]; if (t && t.id != null) ask(t.id); };
+    const pick = (tabs) => { const t = tabs && tabs[0]; if (t && t.id != null) { currentTabId = t.id; ask(t.id); } };
     try {
       const q = api.tabs.query({ active: true, currentWindow: true });
       if (q && typeof q.then === "function") q.then(pick, () => {});
@@ -196,12 +232,11 @@
         settings.mode = s.mode || "hide";
         settings.enabled = s.enabled || {};
         settings.custom = Array.isArray(s.custom) ? s.custom : [];
-        settings.pill = !!s.pill;
+        settings.allow = (s.allow && typeof s.allow === "object") ? s.allow : {};
       }
       renderLists();
       renderMode();
       renderCustom();
-      renderPill();
       renderHero();
       renderPageStats();
       wireShare();

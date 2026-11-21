@@ -14,8 +14,9 @@
     ? window.__BLAIKHOLE_LIST__
     : { lists: [] };
 
-  // Defaults until storage resolves: every recommended list on, mode = hide, on-page pill off.
-  let settings = { mode: "hide", enabled: {}, custom: [], pill: false };
+  // Defaults until storage resolves: every recommended list on, mode = hide.
+  // `allow` is a per-site whitelist: { "<host>": ["<listId>", ...] } = let that surface through here.
+  let settings = { mode: "hide", enabled: {}, custom: [], allow: {} };
 
   // What is blocked on this page right now, deterministically: the distinct elements the active rules
   // match, attributed to the list that caught them, so the UI can name the surfaces ("Google AI
@@ -29,8 +30,18 @@
     return l.recommended !== false;
   }
 
+  // Whitelisted for THIS site: the user chose to let this surface through here.
+  function allowedHere(l) {
+    const a = settings.allow && settings.allow[host];
+    return Array.isArray(a) && a.indexOf(l.id) !== -1;
+  }
+
+  function matchesHost(l) {
+    return (l.match || []).some(m => host.includes(m));
+  }
+
   function activeLists() {
-    return LIST.lists.filter(l => listOn(l) && (l.match || []).some(m => host.includes(m)));
+    return LIST.lists.filter(l => listOn(l) && !allowedHere(l) && matchesHost(l));
   }
 
   // Source-level block: some sites expose a URL switch that turns AI OFF server-side
@@ -245,27 +256,6 @@
     } catch (e) { /* no background yet, fine */ }
   }
 
-  // Opt-in on-page pill: a small, dismissible count in the corner. Off by default, for people who
-  // want the shareable number on the page itself.
-  const PILL_ID = "blaikhole-pill";
-  function maybePill(shown) {
-    if (!document.body) return;
-    let el = document.getElementById(PILL_ID);
-    if (!settings.pill || shown <= 0) { if (el) el.remove(); return; }
-    if (!el) {
-      el = document.createElement("div");
-      el.id = PILL_ID;
-      el.setAttribute("style",
-        "all:unset;position:fixed;bottom:16px;right:16px;z-index:2147483647;" +
-        "background:#1b1035;color:#d7c9ff;font:600 12px/1.2 system-ui,sans-serif;" +
-        "padding:7px 11px;border-radius:999px;box-shadow:0 2px 10px rgba(0,0,0,.35);cursor:pointer;");
-      el.title = "Blaikhole: click to dismiss";
-      el.addEventListener("click", () => el.remove());
-      document.body.appendChild(el);
-    }
-    el.textContent = shown + (shown === 1 ? " AI blocked" : " AI blocked");
-  }
-
   function run() {
     const lists = activeLists();
     injectStyle(buildCss(lists, settings.mode));
@@ -278,23 +268,21 @@
     const shown = detail.total + detail.sources.length;
     bumpLifetime(shown);
     reportCount(shown);
-    maybePill(shown);
   }
 
-  // 0. Source-level block FIRST, before any paint. If we can switch AI off at the URL, do it and
-  //    stop: the page is navigating away. Runs with defaults at document_start (storage is async),
-  //    so a user who has disabled a redirecting list is still redirected on the very first load;
-  //    the settings-honoring, footprint-free version is the declarativeNetRequest milestone.
-  if (maybeRedirect()) return;
-
-  // 1. Synchronous first pass with defaults (flash-free for the common case).
+  // 1. Synchronous first pass with defaults at document_start. This CSS-hides known AI surfaces
+  //    before paint (flash-free), which also covers the brief window before the source-level
+  //    redirect fires in step 2.
   run();
 
   // Answer the toolbar popup when it asks what is blocked on this page.
   if (api && api.runtime && api.runtime.onMessage) {
     try {
       api.runtime.onMessage.addListener((msg, sender, sendResponse) => {
-        if (msg && msg.type === "blaikhole:getDetail") { sendResponse(lastBlocked); return true; }
+        if (msg && msg.type === "blaikhole:getDetail") {
+          sendResponse(Object.assign({ host: host }, lastBlocked));
+          return true;
+        }
       });
     } catch (e) { /* no-op */ }
   }
@@ -306,8 +294,12 @@
       settings.mode = s.mode || settings.mode;
       settings.enabled = s.enabled || settings.enabled;
       settings.custom = Array.isArray(s.custom) ? s.custom : settings.custom;
-      settings.pill = !!s.pill;
+      settings.allow = (s.allow && typeof s.allow === "object") ? s.allow : settings.allow;
     }
+    // 2. Source-level block now that settings are known: only redirects lists that are active here
+    //    (honors disable + per-site whitelist), so it never fights a whitelist or loops. The
+    //    document_start CSS hide above already prevented any flash.
+    if (maybeRedirect()) return;
     run();
     mergeCustom().finally(() => { run(); observe(); });
   }

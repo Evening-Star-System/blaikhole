@@ -81,15 +81,27 @@ h1 { margin: 0; font-size: 27px; font-weight: 800; letter-spacing: .01em; }
 .heronum { font-size: 56px; font-weight: 800; line-height: 1; color: var(--accent); letter-spacing: -.02em; }
 .herolabel { margin-top: 8px; font-size: 15px; font-weight: 600; }
 .herosub { margin-top: 8px; color: var(--muted); font-size: 13px; }
-.statlist { list-style: none; margin: 14px 0 0; padding: 0; display: grid; gap: 6px; text-align: left; }
-.statlist li {
+/* blocked-on-this-page list + whitelist buttons */
+.blocked summary { font-size: 15px; font-weight: 700; }
+.blocklist { list-style: none; margin: 10px 0 0; padding: 0; display: grid; gap: 6px; }
+.blocklist.allowed { margin-top: 6px; }
+.blocklist li {
   display: flex; justify-content: space-between; gap: 10px; align-items: center;
-  padding: 9px 13px; border-radius: 11px;
-  background: color-mix(in srgb, var(--accent) 10%, transparent);
-  font-size: 13px;
+  padding: 9px 12px; border-radius: 11px;
+  background: color-mix(in srgb, var(--accent) 9%, transparent);
+  font-size: 13.5px;
 }
-.statlist li .n { color: var(--accent); font-weight: 700; }
-.statlist li .src { color: var(--muted); font-weight: 600; font-size: 12px; }
+.blocklist li .nm { flex: 1; display: grid; gap: 1px; }
+.blocklist li .nm .sub { color: var(--muted); font-weight: 600; font-size: 12px; }
+.blocklist li .nm .main { font-weight: 600; }
+.blocklist.allowed li { background: color-mix(in srgb, var(--muted) 12%, transparent); }
+.allowbtn {
+  appearance: none; border: 1px solid var(--line); background: transparent;
+  color: var(--accent); font: inherit; font-weight: 700; font-size: 12.5px;
+  padding: 7px 12px; border-radius: 10px; cursor: pointer; flex: none; white-space: nowrap;
+  min-height: 34px;
+}
+.allowbtn:hover { background: color-mix(in srgb, var(--accent) 12%, transparent); }
 
 /* buttons */
 .btn {
@@ -119,7 +131,7 @@ h3 { margin: 16px 0 8px; font-size: 14px; font-weight: 700; }
 h3:first-child { margin-top: 4px; }
 .hint { color: var(--muted); font-size: 13px; margin: 0 0 10px; }
 
-/* toggle rows (list switches + the pill switch) */
+/* toggle rows (the list switches) */
 .toggles { display: grid; gap: 2px; }
 .toggle {
   display: flex; align-items: center; gap: 12px;
