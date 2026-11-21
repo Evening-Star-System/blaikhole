@@ -63,6 +63,15 @@ check("google images (udm=2) is not forced to web",
 check("non-search google paths are untouched",
   rt && rt("https://www.google.com/maps?q=cats", lists) === null);
 
+// Multi-param source block (DuckDuckGo: assist=false + kbe=0), via a synthetic list.
+const ddg = [{ id: "ddg", redirect: [{ path: "/", set: { assist: "false", kbe: "0" } }] }];
+check("multi-param redirect adds all missing params",
+  rt && rt("https://duckduckgo.com/?q=cats", ddg) === "https://duckduckgo.com/?q=cats&assist=false&kbe=0");
+check("multi-param redirect leaves a fully-set url alone",
+  rt && rt("https://duckduckgo.com/?q=cats&assist=false&kbe=0", ddg) === null);
+check("multi-param redirect fills only the missing param",
+  rt && rt("https://duckduckgo.com/?q=cats&assist=false", ddg) === "https://duckduckgo.com/?q=cats&assist=false&kbe=0");
+
 // Blocked counter: #aiov (css match) + #aiwrap (contains match) = 2 distinct surfaces, deduped,
 // and the overreach guard means <body>/<html> are never counted.
 const count = exposed && exposed.getBlockedCount ? exposed.getBlockedCount() : -1;

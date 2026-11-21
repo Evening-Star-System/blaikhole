@@ -38,17 +38,30 @@
   // than hiding: the AI never renders, so there is no flash and nothing to catch after paint.
   // Pure: returns the URL to navigate to, or null to leave the page as-is. `lists` is already
   // filtered to the active, enabled lists for this host.
+  // A redirect rule sets one or more query params. `set` is the general form ({key: value, ...});
+  // `param`/`value` is the single-param shorthand.
+  function ruleSet(r) {
+    if (r.set && typeof r.set === "object") return r.set;
+    if (r.param) return { [r.param]: r.value };
+    return null;
+  }
+
   function redirectTarget(href, lists) {
     let u;
     try { u = new URL(href); } catch (e) { return null; }
     for (const l of lists) {
       for (const r of (l.redirect || [])) {
-        if (!r || !r.param) continue;
+        if (!r) continue;
+        const set = ruleSet(r);
+        if (!set) continue;
         if (r.path && !u.pathname.startsWith(r.path)) continue;        // scope to e.g. /search
         if (r.require_q !== false && !u.searchParams.has("q")) continue; // real query only
-        if (u.searchParams.has(r.param)) continue;                      // already set (incl. udm=2 images) -> leave
-        u.searchParams.set(r.param, String(r.value));
-        return u.toString();
+        let changed = false;
+        for (const k of Object.keys(set)) {
+          // only ADD a param that is absent, never clobber an existing one (e.g. udm=2 images)
+          if (!u.searchParams.has(k)) { u.searchParams.set(k, String(set[k])); changed = true; }
+        }
+        if (changed) return u.toString();
       }
     }
     return null;
@@ -189,10 +202,16 @@
     try { u = new URL(location.href); } catch (e) { return out; }
     for (const l of lists) {
       for (const r of (l.redirect || [])) {
-        if (!r || !r.param) continue;
+        if (!r) continue;
+        const set = ruleSet(r);
+        if (!set) continue;
         if (r.path && !u.pathname.startsWith(r.path)) continue;
         if (r.require_q !== false && !u.searchParams.has("q")) continue;
-        if (u.searchParams.get(r.param) === String(r.value)) { out.push(l.id); break; }
+        let allSet = true;
+        for (const k of Object.keys(set)) {
+          if (u.searchParams.get(k) !== String(set[k])) { allSet = false; break; }
+        }
+        if (allSet) { out.push(l.id); break; }
       }
     }
     return out;

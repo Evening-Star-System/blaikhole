@@ -17,7 +17,8 @@ A list file is JSON:
       "recommended": true,              // on by default
       "match": ["google."],             // hostname substrings this applies to
       "redirect": [                     // optional: block at the SOURCE by switching AI off in the URL
-        { "path": "/search", "param": "udm", "value": "14" }
+        { "path": "/search", "param": "udm", "value": "14" },        // single param
+        { "path": "/", "set": { "assist": "false", "kbe": "0" } }    // or set several at once
       ],
       "css": ["selector", ...],         // hidden via injected CSS (fast, flash-free)
       "contains": [                     // durable text/aria anchors (applied in JS)
@@ -29,9 +30,12 @@ A list file is JSON:
 ```
 
 - **`redirect`** rules are the strongest path. When a site exposes a URL switch that turns AI off
-  server-side (Google's `udm=14` gives plain web results with no AI Overview), the extension adds it
-  before the page paints, so the AI never renders. A rule fires when the path starts with `path`, the
-  URL has a `q` query (unless `require_q: false`), and `param` is not already set.
+  server-side (Google's `udm=14` gives plain web results with no AI Overview; DuckDuckGo's
+  `assist=false&kbe=0`; Brave's `summary=0`), the extension adds it before the page paints, so the AI
+  never renders. A rule fires when the path starts with `path`, the URL has a `q` query (unless
+  `require_q: false`), and at least one target param is missing. Use `param`/`value` for one param, or
+  `set` (an object) to add several at once. Existing params are never overwritten (so Google Images,
+  `udm=2`, is left alone).
 - **`css`** rules are the fast path. They hide by structure.
 - **`contains`** rules are the durable path for churn-prone surfaces: find an element whose visible
   text or `aria-label` contains `text` (shorter than `maxlen`, to avoid false matches), then act on

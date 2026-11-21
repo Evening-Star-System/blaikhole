@@ -1,10 +1,10 @@
 {
   "name": "Blaikhole Core",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "updated": "2026-11-21",
   "license": "CC-BY-4.0",
   "homepage": "https://github.com/Evening-Star-System/blaikhole",
-  "note": "Starter rules. Selectors and text anchors must be verified and tuned against each live site; class-name selectors churn and are the ongoing maintenance work. Prefer durable anchors (aria-label, role, stable data-* and visible labels) over class names.",
+  "note": "Source-level redirects (Google udm=14, DuckDuckGo assist=false+kbe=0, Brave summary=0) are the most durable blocks but are vendor-undocumented and may change; re-check periodically. css and contains selectors are starter/sourced and must be verified against each live site (use scripts/capture-selector.js). Prefer durable anchors (aria-label, role, stable data-*, custom-element tags) over class names, which churn.",
   "lists": [
     {
       "id": "google-ai",
@@ -57,11 +57,44 @@
       "match": ["youtube.com"],
       "css": [
         "ytd-ai-summary-renderer",
-        "button[aria-label*='AI']",
-        "#google-ai-overview"
+        "video-summary-content-view-model",
+        "#video-summary",
+        "#expandable-metadata:has(video-summary-content-view-model)"
       ],
       "contains": [
         { "text": "ai summary", "scope": "span,[role='heading'],button", "up": 3, "maxlen": 24 }
+      ]
+    },
+    {
+      "id": "duckduckgo-ai",
+      "name": "DuckDuckGo AI (Assist and AI chat)",
+      "recommended": true,
+      "match": ["duckduckgo.com"],
+      "redirect": [
+        { "path": "/", "set": { "assist": "false", "kbe": "0" } }
+      ],
+      "css": [
+        "[data-testid='ai-chat']",
+        "a[href*='duckduckgo.com/aichat']"
+      ],
+      "contains": [
+        { "text": "duck.ai", "scope": "a,span,[role='heading']", "up": 2, "maxlen": 24 }
+      ]
+    },
+    {
+      "id": "brave-ai",
+      "name": "Brave Search AI (Answers and summary)",
+      "recommended": true,
+      "match": ["search.brave.com"],
+      "redirect": [
+        { "path": "/search", "set": { "summary": "0" } }
+      ],
+      "css": [
+        "#summarizer",
+        "[data-testid='summarizer']"
+      ],
+      "contains": [
+        { "text": "answer with ai", "scope": "button,a,[role='heading']", "up": 2, "maxlen": 24 }
       ]
     },
     {
