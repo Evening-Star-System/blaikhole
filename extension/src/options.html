@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Blaikhole</title>
+  <link rel="stylesheet" href="options.css">
+</head>
+<body>
+  <main class="wrap">
+    <header class="head">
+      <h1>Blaikhole</h1>
+      <p class="tag">A black hole for AI slop. It is on. You do not have to do anything.</p>
+    </header>
+
+    <section class="card">
+      <h2>What to make disappear</h2>
+      <p class="hint">All on by default. Tap to turn one off.</p>
+      <div id="lists" class="toggles"></div>
+    </section>
+
+    <section class="card">
+      <h2>How</h2>
+      <div class="modes" id="modes">
+        <label><input type="radio" name="mode" value="hide"> <b>Hide</b> it completely</label>
+        <label><input type="radio" name="mode" value="dim"> <b>Dim</b> it (hover to see)</label>
+        <label><input type="radio" name="mode" value="label"> <b>Label</b> it, do not hide</label>
+      </div>
+    </section>
+
+    <details class="card">
+      <summary>Add your own lists (advanced)</summary>
+      <p class="hint">Paste a link to a Blaikhole-format list. One per line.</p>
+      <textarea id="custom" rows="3" placeholder="https://example.com/my-list.json"></textarea>
+      <div class="row"><button id="save-custom" type="button">Save lists</button><span id="custom-status"></span></div>
+    </details>
+
+    <p class="applynote">Changes take effect the next time a page loads.</p>
+
+    <footer class="foot">
+      <div class="brand">Built by Evening Star</div>
+      <a class="acct" id="acct" href="https://ess.eveningstar.app" target="_blank" rel="noopener">Make a free account</a>
+    </footer>
+  </main>
+  <script src="list-data.js"></script>
+  <script src="options.js"></script>
+</body>
+</html>

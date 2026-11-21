@@ -1,0 +1,54 @@
+:root {
+  --bg: #0b0714;
+  --card: #150e26;
+  --ink: #ece7f6;
+  --muted: #a99fc4;
+  --accent: #b69cff;
+  --line: #2a2140;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  background: radial-gradient(120% 90% at 50% -10%, #1a0f33 0%, var(--bg) 60%);
+  color: var(--ink);
+  font: 15px/1.5 system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+}
+.wrap { max-width: 540px; margin: 0 auto; padding: 28px 20px 40px; }
+.head { text-align: center; margin-bottom: 22px; }
+h1 { margin: 0; font-size: 30px; letter-spacing: .02em; }
+.tag { color: var(--muted); margin: 6px 0 0; }
+.card {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 18px;
+  margin: 0 0 16px;
+}
+h2 { margin: 0 0 4px; font-size: 16px; }
+.hint { color: var(--muted); font-size: 13px; margin: 0 0 12px; }
+.toggles { display: grid; gap: 2px; }
+.toggle {
+  display: flex; align-items: center; gap: 12px;
+  padding: 10px 8px; border-radius: 10px; cursor: pointer;
+}
+.toggle:hover { background: rgba(182,156,255,.08); }
+.toggle input, .modes input { accent-color: var(--accent); width: 18px; height: 18px; }
+.modes { display: grid; gap: 10px; }
+.modes label { display: flex; align-items: center; gap: 10px; cursor: pointer; }
+summary { cursor: pointer; font-weight: 600; }
+textarea {
+  width: 100%; margin: 10px 0; padding: 10px; border-radius: 10px;
+  background: #0e0a1c; color: var(--ink); border: 1px solid var(--line); resize: vertical;
+}
+.row { display: flex; align-items: center; gap: 12px; }
+button {
+  background: var(--accent); color: #1a0f33; border: 0; border-radius: 9px;
+  padding: 8px 14px; font-weight: 700; cursor: pointer;
+}
+button:hover { filter: brightness(1.08); }
+#custom-status, #save-custom + span { color: var(--muted); font-size: 13px; }
+.applynote { text-align: center; color: var(--muted); font-size: 13px; margin: 4px 0 20px; }
+.foot { text-align: center; border-top: 1px solid var(--line); padding-top: 18px; }
+.brand { color: var(--muted); font-size: 13px; }
+.acct { display: inline-block; margin-top: 6px; color: var(--accent); text-decoration: none; font-weight: 600; }
+.acct:hover { text-decoration: underline; }
