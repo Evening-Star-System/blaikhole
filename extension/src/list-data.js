@@ -12,6 +12,9 @@ window.__BLAIKHOLE_LIST__ = {
       "name": "Google AI Overviews and AI Mode",
       "recommended": true,
       "match": ["google."],
+      "redirect": [
+        { "path": "/search", "param": "udm", "value": "14" }
+      ],
       "css": [
         "div[data-subtree='aiov']",
         "div[aria-label='AI Overview']",

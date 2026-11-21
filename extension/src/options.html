@@ -13,6 +13,13 @@
       <p class="tag">A black hole for AI slop. It is on. You do not have to do anything.</p>
     </header>
 
+    <section class="card stats" id="page-stats" hidden>
+      <div class="statnum"><span id="stat-count">0</span></div>
+      <h2 id="stat-head">AI surfaces blocked on this page</h2>
+      <ul class="statlist" id="stat-list"></ul>
+      <p class="lifetime" id="lifetime" hidden></p>
+    </section>
+
     <section class="card">
       <h2>What to make disappear</h2>
       <p class="hint">All on by default. Tap to turn one off.</p>
@@ -26,6 +33,10 @@
         <label><input type="radio" name="mode" value="dim"> <b>Dim</b> it (hover to see)</label>
         <label><input type="radio" name="mode" value="label"> <b>Label</b> it, do not hide</label>
       </div>
+    </section>
+
+    <section class="card">
+      <label class="toggle"><input type="checkbox" id="pill-toggle"><span>Show the count on the page (a small badge you can screenshot)</span></label>
     </section>
 
     <details class="card">

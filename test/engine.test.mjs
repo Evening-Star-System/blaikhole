@@ -20,12 +20,16 @@ const html = `<!DOCTYPE html><html><head></head><body>
   <div id="aiwrap"><section><div><div><h2>AI Overview</h2><p>generated summary</p></div></div></section></div>
 </body></html>`;
 
+// url carries udm=14 so the redirect pass is a no-op here and the hide assertions below
+// exercise the hide/contains engine, not navigation.
 const dom = new JSDOM(html, {
-  url: "https://www.google.com/search?q=test",
+  url: "https://www.google.com/search?q=test&udm=14",
   runScripts: "dangerously",
   pretendToBeVisual: true,
 });
 const { window } = dom;
+let exposed = null;
+window.__BLAIKHOLE_EXPOSE__ = (o) => { exposed = o; };
 window.eval(listData);
 window.eval(content);
 await new Promise((r) => setTimeout(r, 60));
@@ -45,6 +49,31 @@ check("contains-rule hid the deep AI Overview container", inlineHidden(d.getElem
 check("normal result NOT hidden", !inlineHidden(d.getElementById("normal")));
 check("normal result unmarked", !d.getElementById("normal").hasAttribute("data-blaikhole"));
 check("no overreach onto <html>/<body>", !inlineHidden(d.documentElement) && !inlineHidden(d.body));
+
+// Source-level block (Google udm=14): verify the pure redirect decision.
+const rt = exposed && exposed.redirectTarget;
+const lists = exposed && exposed.activeLists ? exposed.activeLists() : [];
+check("redirect helper exposed to test seam", typeof rt === "function");
+check("bare google search gets udm=14 appended",
+  rt && rt("https://www.google.com/search?q=cats", lists) === "https://www.google.com/search?q=cats&udm=14");
+check("a search already carrying udm is left alone",
+  rt && rt("https://www.google.com/search?q=cats&udm=14", lists) === null);
+check("google images (udm=2) is not forced to web",
+  rt && rt("https://www.google.com/search?q=cats&udm=2", lists) === null);
+check("non-search google paths are untouched",
+  rt && rt("https://www.google.com/maps?q=cats", lists) === null);
+
+// Blocked counter: #aiov (css match) + #aiwrap (contains match) = 2 distinct surfaces, deduped,
+// and the overreach guard means <body>/<html> are never counted.
+const count = exposed && exposed.getBlockedCount ? exposed.getBlockedCount() : -1;
+check("blocked counter reports the 2 distinct AI surfaces", count === 2);
+const detail = exposed && exposed.getBlockedDetail ? exposed.getBlockedDetail() : {};
+check("named breakdown attributes both surfaces to google-ai", detail.byList && detail.byList["google-ai"] === 2);
+check("named breakdown carries the human-readable list name",
+  detail.names && typeof detail.names["google-ai"] === "string" && detail.names["google-ai"].length > 0);
+// the fixture URL carries udm=14, so google-ai is recorded as blocked at the source too
+check("source-level block is recorded separately",
+  Array.isArray(detail.sources) && detail.sources.includes("google-ai"));
 
 let ok = true;
 for (const r of results) { console.log((r.pass ? "PASS " : "FAIL ") + r.name); if (!r.pass) ok = false; }

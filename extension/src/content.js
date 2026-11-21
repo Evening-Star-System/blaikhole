@@ -14,8 +14,15 @@
     ? window.__BLAIKHOLE_LIST__
     : { lists: [] };
 
-  // Defaults until storage resolves: every recommended list on, mode = hide.
-  let settings = { mode: "hide", enabled: {}, custom: [] };
+  // Defaults until storage resolves: every recommended list on, mode = hide, on-page pill off.
+  let settings = { mode: "hide", enabled: {}, custom: [], pill: false };
+
+  // What is blocked on this page right now, deterministically: the distinct elements the active rules
+  // match, attributed to the list that caught them, so the UI can name the surfaces ("Google AI
+  // Overview", etc), not just show a bare number. `sources` lists ids blocked at the source (e.g. a
+  // udm=14 redirect), which have no in-page element to count. Nothing is guessed.
+  let lastBlocked = { total: 0, byList: {}, names: {}, sources: [] };
+  let countedForPage = 0; // how much of this page we have already added to the lifetime total
 
   function listOn(l) {
     if (Object.prototype.hasOwnProperty.call(settings.enabled, l.id)) return !!settings.enabled[l.id];
@@ -24,6 +31,34 @@
 
   function activeLists() {
     return LIST.lists.filter(l => listOn(l) && (l.match || []).some(m => host.includes(m)));
+  }
+
+  // Source-level block: some sites expose a URL switch that turns AI OFF server-side
+  // (e.g. Google's `udm=14` = plain web results, no AI Overview). That is strictly better
+  // than hiding: the AI never renders, so there is no flash and nothing to catch after paint.
+  // Pure: returns the URL to navigate to, or null to leave the page as-is. `lists` is already
+  // filtered to the active, enabled lists for this host.
+  function redirectTarget(href, lists) {
+    let u;
+    try { u = new URL(href); } catch (e) { return null; }
+    for (const l of lists) {
+      for (const r of (l.redirect || [])) {
+        if (!r || !r.param) continue;
+        if (r.path && !u.pathname.startsWith(r.path)) continue;        // scope to e.g. /search
+        if (r.require_q !== false && !u.searchParams.has("q")) continue; // real query only
+        if (u.searchParams.has(r.param)) continue;                      // already set (incl. udm=2 images) -> leave
+        u.searchParams.set(r.param, String(r.value));
+        return u.toString();
+      }
+    }
+    return null;
+  }
+
+  function maybeRedirect() {
+    let target;
+    try { target = redirectTarget(location.href, activeLists()); } catch (e) { return false; }
+    if (!target || target === location.href) return false;
+    try { location.replace(target); return true; } catch (e) { return false; }
   }
 
   function badgeCss() {
@@ -118,16 +153,132 @@
     }
   }
 
+  // Tally distinct blocked elements, attributed to the list that caught each one: css-selector
+  // matches (live) plus contains-matched nodes (they carry the MARK attribute = list id after act).
+  // Deduped per element (first list to claim it wins), and never body/html.
+  function countBlocked(lists) {
+    const owner = new Map(); // element -> list id
+    for (const l of lists) {
+      for (const c of (l.css || [])) {
+        let nodes;
+        try { nodes = document.querySelectorAll(c); } catch (e) { continue; }
+        for (const n of nodes) {
+          if (n === document.body || n === document.documentElement) continue;
+          if (!owner.has(n)) owner.set(n, l.id);
+        }
+      }
+    }
+    let marked;
+    try { marked = document.querySelectorAll("[" + MARK + "]"); } catch (e) { marked = []; }
+    for (const n of marked) {
+      if (n === document.body || n === document.documentElement) continue;
+      if (!owner.has(n)) owner.set(n, n.getAttribute(MARK) || "ai");
+    }
+    const byList = {};
+    for (const id of owner.values()) byList[id] = (byList[id] || 0) + 1;
+    const names = {};
+    for (const l of lists) names[l.id] = l.name || l.id;
+    return { total: owner.size, byList, names };
+  }
+
+  // Which active lists blocked this page at the SOURCE (their redirect rule is already satisfied in
+  // the URL, e.g. udm=14 is present). These have no in-page element, so they are reported separately.
+  function sourceBlocks(lists) {
+    const out = [];
+    let u;
+    try { u = new URL(location.href); } catch (e) { return out; }
+    for (const l of lists) {
+      for (const r of (l.redirect || [])) {
+        if (!r || !r.param) continue;
+        if (r.path && !u.pathname.startsWith(r.path)) continue;
+        if (r.require_q !== false && !u.searchParams.has("q")) continue;
+        if (u.searchParams.get(r.param) === String(r.value)) { out.push(l.id); break; }
+      }
+    }
+    return out;
+  }
+
+  // Lifetime total, the shareable milestone. Add only the growth of THIS page's count (a new content
+  // script runs per navigation, so countedForPage resets), never double-counting observer re-runs.
+  function bumpLifetime(shown) {
+    if (!api || !api.storage || !api.storage.local) return;
+    const delta = shown - countedForPage;
+    if (delta <= 0) return;
+    countedForPage = shown;
+    try {
+      const apply = (res) => {
+        const cur = (res && res.blaikhole_stats && typeof res.blaikhole_stats.lifetime === "number")
+          ? res.blaikhole_stats.lifetime : 0;
+        api.storage.local.set({ blaikhole_stats: { lifetime: cur + delta } });
+      };
+      const got = api.storage.local.get("blaikhole_stats");
+      if (got && typeof got.then === "function") got.then(apply, () => {});
+      else api.storage.local.get("blaikhole_stats", apply);
+    } catch (e) { /* no-op */ }
+  }
+
+  // Tell the background page the per-tab count so it can set the toolbar badge.
+  function reportCount(shown) {
+    if (!api || !api.runtime || !api.runtime.sendMessage) return;
+    try {
+      const r = api.runtime.sendMessage({ type: "blaikhole:count", total: shown });
+      if (r && typeof r.catch === "function") r.catch(() => {});
+    } catch (e) { /* no background yet, fine */ }
+  }
+
+  // Opt-in on-page pill: a small, dismissible count in the corner. Off by default, for people who
+  // want the shareable number on the page itself.
+  const PILL_ID = "blaikhole-pill";
+  function maybePill(shown) {
+    if (!document.body) return;
+    let el = document.getElementById(PILL_ID);
+    if (!settings.pill || shown <= 0) { if (el) el.remove(); return; }
+    if (!el) {
+      el = document.createElement("div");
+      el.id = PILL_ID;
+      el.setAttribute("style",
+        "all:unset;position:fixed;bottom:16px;right:16px;z-index:2147483647;" +
+        "background:#1b1035;color:#d7c9ff;font:600 12px/1.2 system-ui,sans-serif;" +
+        "padding:7px 11px;border-radius:999px;box-shadow:0 2px 10px rgba(0,0,0,.35);cursor:pointer;");
+      el.title = "Blaikhole: click to dismiss";
+      el.addEventListener("click", () => el.remove());
+      document.body.appendChild(el);
+    }
+    el.textContent = shown + (shown === 1 ? " AI blocked" : " AI blocked");
+  }
+
   function run() {
     const lists = activeLists();
     injectStyle(buildCss(lists, settings.mode));
-    if (!lists.length) return;
+    if (!lists.length) { lastBlocked = { total: 0, byList: {}, names: {}, sources: [] }; return; }
     if (settings.mode === "label") labelCssMatches(lists);
     applyContains(lists, settings.mode);
+    const detail = countBlocked(lists);
+    detail.sources = sourceBlocks(lists);
+    lastBlocked = detail;
+    const shown = detail.total + detail.sources.length;
+    bumpLifetime(shown);
+    reportCount(shown);
+    maybePill(shown);
   }
+
+  // 0. Source-level block FIRST, before any paint. If we can switch AI off at the URL, do it and
+  //    stop: the page is navigating away. Runs with defaults at document_start (storage is async),
+  //    so a user who has disabled a redirecting list is still redirected on the very first load;
+  //    the settings-honoring, footprint-free version is the declarativeNetRequest milestone.
+  if (maybeRedirect()) return;
 
   // 1. Synchronous first pass with defaults (flash-free for the common case).
   run();
+
+  // Answer the toolbar popup when it asks what is blocked on this page.
+  if (api && api.runtime && api.runtime.onMessage) {
+    try {
+      api.runtime.onMessage.addListener((msg, sender, sendResponse) => {
+        if (msg && msg.type === "blaikhole:getDetail") { sendResponse(lastBlocked); return true; }
+      });
+    } catch (e) { /* no-op */ }
+  }
 
   // 2. Reconcile with stored settings, then start observing.
   function applyStored(res) {
@@ -136,6 +287,7 @@
       settings.mode = s.mode || settings.mode;
       settings.enabled = s.enabled || settings.enabled;
       settings.custom = Array.isArray(s.custom) ? s.custom : settings.custom;
+      settings.pill = !!s.pill;
     }
     run();
     mergeCustom().finally(() => { run(); observe(); });
@@ -175,4 +327,16 @@
   } else {
     observe();
   }
+
+  // Test-only seam: the regression test sets window.__BLAIKHOLE_EXPOSE__ before loading this
+  // script to assert the pure redirect logic. No page ever sets it, so nothing leaks in production.
+  try {
+    if (typeof window !== "undefined" && typeof window.__BLAIKHOLE_EXPOSE__ === "function") {
+      window.__BLAIKHOLE_EXPOSE__({
+        redirectTarget, activeLists,
+        getBlockedCount: () => lastBlocked.total,
+        getBlockedDetail: () => lastBlocked,
+      });
+    }
+  } catch (e) { /* no-op */ }
 })();
