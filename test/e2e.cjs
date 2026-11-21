@@ -30,6 +30,7 @@ const MOCK = {
     <div id="aiov" aria-label="AI Overview">AI Overview generated text</div></body></html>`,
   ddg: `<!DOCTYPE html><html><body><div id="r">ddg results</div></body></html>`,
   brave: `<!DOCTYPE html><html><body><div id="r">brave results</div></body></html>`,
+  qwant: `<!DOCTYPE html><html><body><div id="r">qwant results</div></body></html>`,
   youtube: `<!DOCTYPE html><html><body>
     <div id="expandable-metadata"><video-summary-content-view-model>AI summary</video-summary-content-view-model></div>
     <div id="desc">real description</div></body></html>`,
@@ -42,12 +43,13 @@ const MOCK = {
     args: ["--headless=new", `--disable-extensions-except=${EXT}`, `--load-extension=${EXT}`, "--no-sandbox"],
   });
 
-  await ctx.route(/https:\/\/(www\.google\.com|duckduckgo\.com|search\.brave\.com|www\.youtube\.com)\//, (route) => {
+  await ctx.route(/https:\/\/(www\.google\.com|duckduckgo\.com|search\.brave\.com|www\.qwant\.com|www\.youtube\.com)\//, (route) => {
     const u = route.request().url();
     let body = "<html><body>x</body></html>";
     if (u.includes("google.com")) body = MOCK.google;
     else if (u.includes("duckduckgo.com")) body = MOCK.ddg;
     else if (u.includes("brave.com")) body = MOCK.brave;
+    else if (u.includes("qwant.com")) body = MOCK.qwant;
     else if (u.includes("youtube.com")) body = MOCK.youtube;
     route.fulfill({ status: 200, contentType: "text/html", body });
   });
@@ -82,6 +84,9 @@ const MOCK = {
 
   const b = await nav("https://search.brave.com/search?q=test", /summary=0/);
   check("brave: redirect added summary=0", /summary=0/.test(b.final));
+
+  const q = await nav("https://www.qwant.com/?q=test", /llm=0/);
+  check("qwant: redirect added llm=0", /llm=0/.test(q.final));
 
   const y = await nav("https://www.youtube.com/watch?v=x", /never-match/);
   check("youtube: video-summary element hidden via real :has CSS", y.hidden.yt === true);

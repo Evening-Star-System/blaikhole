@@ -1,11 +1,11 @@
 // GENERATED from lists/blaikhole-core.json by scripts/sync-list.sh. Do not edit by hand.
 window.__BLAIKHOLE_LIST__ = {
   "name": "Blaikhole Core",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "updated": "2026-11-21",
   "license": "CC-BY-4.0",
   "homepage": "https://github.com/Evening-Star-System/blaikhole",
-  "note": "Source-level redirects (Google udm=14, DuckDuckGo assist=false+kbe=0, Brave summary=0) are the most durable blocks but are vendor-undocumented and may change; re-check periodically. css and contains selectors are starter/sourced and must be verified against each live site (use scripts/capture-selector.js). Prefer durable anchors (aria-label, role, stable data-*, custom-element tags) over class names, which churn.",
+  "note": "Source-level redirects (Google udm=14, DuckDuckGo assist=false+kbe=0, Brave summary=0, Qwant llm=0) are the most durable blocks but are vendor-undocumented and may change; re-check periodically. css and contains selectors are starter/sourced and must be verified against each live site (use scripts/capture-selector.js). Prefer durable anchors (aria-label, role, stable data-*, custom-element tags) over class names, which churn.",
   "lists": [
     {
       "id": "google-ai",
@@ -96,6 +96,21 @@ window.__BLAIKHOLE_LIST__ = {
       ],
       "contains": [
         { "text": "answer with ai", "scope": "button,a,[role='heading']", "up": 2, "maxlen": 24 }
+      ]
+    },
+    {
+      "id": "qwant-ai",
+      "name": "Qwant AI (overview and summarize)",
+      "recommended": true,
+      "match": ["qwant.com"],
+      "redirect": [
+        { "path": "/", "set": { "llm": "0" } }
+      ],
+      "css": [
+        "[data-testid='summarize']"
+      ],
+      "contains": [
+        { "text": "summarize with ai", "scope": "button,a,[role='heading']", "up": 2, "maxlen": 28 }
       ]
     },
     {
