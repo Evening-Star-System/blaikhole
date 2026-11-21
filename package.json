@@ -1,0 +1,14 @@
+{
+  "name": "blaikhole",
+  "version": "0.1.0",
+  "private": true,
+  "description": "A black hole for AI slop. The shipped extension version lives in extension/manifest.json.",
+  "license": "AGPL-3.0-or-later",
+  "scripts": {
+    "sync": "bash scripts/sync-list.sh",
+    "test": "node test/engine.test.mjs && node test/capture.test.mjs"
+  },
+  "devDependencies": {
+    "jsdom": "^31.0.1"
+  }
+}

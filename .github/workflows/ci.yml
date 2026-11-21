@@ -1,0 +1,31 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dev dependencies
+        run: npm install
+
+      - name: Filter list is valid JSON
+        run: node -e "JSON.parse(require('fs').readFileSync('lists/blaikhole-core.json','utf8')); console.log('list JSON ok')"
+
+      - name: Generated list module is in sync with the list
+        run: |
+          bash scripts/sync-list.sh
+          git diff --exit-code extension/src/list-data.js \
+            || (echo "list-data.js is stale: run 'bash scripts/sync-list.sh' and commit the result" && exit 1)
+
+      - name: Run the test suite
+        run: npm test
