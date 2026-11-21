@@ -9,46 +9,64 @@
 <body>
   <main class="wrap">
     <header class="head">
+      <div class="logo" aria-hidden="true">
+        <svg viewBox="0 0 48 48" width="40" height="40">
+          <defs>
+            <radialGradient id="bh" cx="50%" cy="50%" r="50%">
+              <stop offset="34%" stop-color="#0b0714"/>
+              <stop offset="70%" stop-color="#5a3bb0"/>
+              <stop offset="100%" stop-color="#b69cff"/>
+            </radialGradient>
+          </defs>
+          <circle cx="24" cy="24" r="21" fill="none" stroke="url(#bh)" stroke-width="6"/>
+          <circle cx="24" cy="24" r="10" fill="#0b0714"/>
+        </svg>
+      </div>
       <h1>Blaikhole</h1>
-      <p class="tag">A black hole for AI slop. It is on. You do not have to do anything.</p>
+      <p class="tag">It turns off AI you did not ask for. It works by itself.</p>
     </header>
 
-    <section class="card stats" id="page-stats" hidden>
-      <div class="statnum"><span id="stat-count">0</span></div>
-      <h2 id="stat-head">AI surfaces blocked on this page</h2>
+    <section class="hero" id="hero">
+      <div class="heronum" id="hero-num">On</div>
+      <div class="herolabel" id="hero-label">You are protected</div>
+      <div class="herosub" id="hero-sub"></div>
       <ul class="statlist" id="stat-list"></ul>
-      <p class="lifetime" id="lifetime" hidden></p>
+      <button id="share" class="btn primary" type="button">Share Blaikhole</button>
+      <div class="sharemsg" id="share-msg" hidden>Link copied. Paste it anywhere.</div>
     </section>
 
     <section class="card">
-      <h2>What to make disappear</h2>
-      <p class="hint">All on by default. Tap to turn one off.</p>
+      <h2>Turn things off</h2>
+      <p class="hint">All on to start. Tap one to let it back in.</p>
       <div id="lists" class="toggles"></div>
     </section>
 
     <section class="card">
-      <h2>How</h2>
-      <div class="modes" id="modes">
-        <label><input type="radio" name="mode" value="hide"> <b>Hide</b> it completely</label>
-        <label><input type="radio" name="mode" value="dim"> <b>Dim</b> it (hover to see)</label>
-        <label><input type="radio" name="mode" value="label"> <b>Label</b> it, do not hide</label>
-      </div>
-    </section>
-
-    <section class="card">
-      <label class="toggle"><input type="checkbox" id="pill-toggle"><span>Show the count on the page (a small badge you can screenshot)</span></label>
+      <label class="toggle"><input type="checkbox" id="pill-toggle"><span>Show the count on the page (a badge you can screenshot)</span></label>
     </section>
 
     <details class="card">
-      <summary>Add your own lists (advanced)</summary>
-      <p class="hint">Paste a link to a Blaikhole-format list. One per line.</p>
-      <textarea id="custom" rows="3" placeholder="https://example.com/my-list.json"></textarea>
-      <div class="row"><button id="save-custom" type="button">Save lists</button><span id="custom-status"></span></div>
+      <summary>More options</summary>
+      <div class="sub">
+        <h3>How to handle it</h3>
+        <div class="modes" id="modes">
+          <label><input type="radio" name="mode" value="hide"> <b>Hide</b> it</label>
+          <label><input type="radio" name="mode" value="dim"> <b>Dim</b> it (hover to see)</label>
+          <label><input type="radio" name="mode" value="label"> <b>Mark</b> it, do not hide</label>
+        </div>
+        <h3>Add your own lists</h3>
+        <p class="hint">Paste a link to a Blaikhole list. One per line.</p>
+        <textarea id="custom" rows="3" placeholder="https://example.com/my-list.json"></textarea>
+        <div class="row"><button id="save-custom" type="button" class="btn">Save</button><span id="custom-status"></span></div>
+      </div>
     </details>
 
-    <p class="applynote">Changes take effect the next time a page loads.</p>
+    <section class="card contribute">
+      <p>Saw AI we missed? <a id="contribute" href="https://github.com/Evening-Star-System/blaikhole" target="_blank" rel="noopener">Help us catch it.</a></p>
+    </section>
 
     <footer class="foot">
+      <p class="trust">Free. No account. No tracking.</p>
       <div class="brand">Built by Evening Star</div>
       <a class="acct" id="acct" href="https://ess.eveningstar.app" target="_blank" rel="noopener">Make a free account</a>
     </footer>

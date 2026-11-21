@@ -1,12 +1,17 @@
-// Blaikhole options. Reads and writes a single settings object:
-//   { mode: "hide"|"dim"|"label", enabled: {listId: bool}, custom: [url] }
+// Blaikhole popup / options. Reads and writes one settings object:
+//   { mode: "hide"|"dim"|"label", enabled: {listId: bool}, custom: [url], pill: bool }
+// and reads the lifetime stat from { blaikhole_stats: { lifetime } }.
 (() => {
   "use strict";
   const api = (typeof browser !== "undefined" ? browser : chrome);
   const LIST = (window.__BLAIKHOLE_LIST__ && Array.isArray(window.__BLAIKHOLE_LIST__.lists))
     ? window.__BLAIKHOLE_LIST__ : { lists: [] };
 
+  // Set to the live landing / add-on-store page before the first public launch.
+  const SHARE_URL = "https://blaikhole.eveningstar.app";
+
   let settings = { mode: "hide", enabled: {}, custom: [], pill: false };
+  let lifetime = 0;
 
   const $ = (id) => document.getElementById(id);
 
@@ -15,9 +20,7 @@
     return l.recommended !== false;
   }
 
-  function save() {
-    return api.storage.local.set({ blaikhole: settings });
-  }
+  function save() { return api.storage.local.set({ blaikhole: settings }); }
 
   function renderLists() {
     const host = $("lists");
@@ -28,10 +31,7 @@
       const cb = document.createElement("input");
       cb.type = "checkbox";
       cb.checked = listOn(l);
-      cb.addEventListener("change", () => {
-        settings.enabled[l.id] = cb.checked;
-        save();
-      });
+      cb.addEventListener("change", () => { settings.enabled[l.id] = cb.checked; save(); });
       const span = document.createElement("span");
       span.textContent = l.name || l.id;
       row.appendChild(cb);
@@ -43,9 +43,7 @@
   function renderMode() {
     for (const r of document.querySelectorAll("input[name=mode]")) {
       r.checked = (r.value === (settings.mode || "hide"));
-      r.addEventListener("change", () => {
-        if (r.checked) { settings.mode = r.value; save(); }
-      });
+      r.addEventListener("change", () => { if (r.checked) { settings.mode = r.value; save(); } });
     }
   }
 
@@ -65,81 +63,57 @@
     cb.addEventListener("change", () => { settings.pill = cb.checked; save(); });
   }
 
-  // The lifetime milestone, read from storage. Hidden until there is something to show.
-  function renderLifetime() {
-    const el = $("lifetime");
-    if (!el || !api.storage || !api.storage.local) return;
+  // The big number is the lifetime total. At zero we show a calm "protected" state, never a bare 0.
+  function renderHero() {
     const apply = (res) => {
-      const n = (res && res.blaikhole_stats && typeof res.blaikhole_stats.lifetime === "number")
+      lifetime = (res && res.blaikhole_stats && typeof res.blaikhole_stats.lifetime === "number")
         ? res.blaikhole_stats.lifetime : 0;
-      if (n <= 0) { el.hidden = true; return; }
-      el.textContent = "";
-      const b = document.createElement("b");
-      b.textContent = n.toLocaleString();
-      el.appendChild(b);
-      el.appendChild(document.createTextNode(" AI surfaces blocked since you installed Blaikhole"));
-      el.hidden = false;
+      const num = $("hero-num"), label = $("hero-label");
+      if (lifetime > 0) {
+        num.textContent = lifetime.toLocaleString();
+        label.textContent = lifetime === 1 ? "AI thing blocked so far" : "AI things blocked so far";
+      } else {
+        num.textContent = "On";
+        label.textContent = "You are protected";
+      }
     };
     try {
+      if (!api.storage || !api.storage.local) return;
       const got = api.storage.local.get("blaikhole_stats");
       if (got && typeof got.then === "function") got.then(apply, () => {});
       else api.storage.local.get("blaikhole_stats", apply);
     } catch (e) { /* ignore */ }
   }
 
-  // Ask the active tab's content script what it blocked, and show it. When opened as the full options
-  // tab (not the toolbar popup) the active tab is this extension page, which has no content script, so
-  // the request quietly fails and the card stays hidden. That is the intended behavior.
+  // Ask the active tab what it blocked. On the full options tab (no content script) this quietly does
+  // nothing, which is fine.
   function renderPageStats() {
     if (!api.tabs || !api.tabs.query) return;
-    const card = $("page-stats");
-
     const show = (detail) => {
       if (!detail || typeof detail.total !== "number") return;
       const sources = Array.isArray(detail.sources) ? detail.sources : [];
       const shown = detail.total + sources.length;
-      $("stat-count").textContent = String(shown);
-      $("stat-head").textContent = shown === 0
-        ? "No AI slop found on this page"
-        : (shown === 1 ? "AI surface blocked on this page" : "AI surfaces blocked on this page");
-
+      $("hero-sub").textContent = shown > 0
+        ? (shown === 1 ? "1 blocked on this page" : shown + " blocked on this page")
+        : "Nothing to block on this page";
       const ul = $("stat-list");
       ul.textContent = "";
-      const names = detail.names || {};
-      const byList = detail.byList || {};
-      const sourceSet = {};
-      for (const id of sources) sourceSet[id] = true;
-      // in-page hidden surfaces, most first
+      const names = detail.names || {}, byList = detail.byList || {};
       const ids = Object.keys(byList).sort((a, b) => byList[b] - byList[a]);
       for (const id of ids) {
         const li = document.createElement("li");
-        const name = document.createElement("span");
-        name.textContent = names[id] || id;
-        const n = document.createElement("span");
-        n.className = "n";
-        n.textContent = String(byList[id]);
-        li.appendChild(name);
-        li.appendChild(n);
-        ul.appendChild(li);
+        const nm = document.createElement("span"); nm.textContent = names[id] || id;
+        const n = document.createElement("span"); n.className = "n"; n.textContent = String(byList[id]);
+        li.appendChild(nm); li.appendChild(n); ul.appendChild(li);
       }
-      // source-level blocks (no in-page element), labeled honestly
       for (const id of sources) {
-        if (byList[id]) continue; // already shown as an in-page line
+        if (byList[id]) continue;
         const li = document.createElement("li");
-        const name = document.createElement("span");
-        name.textContent = names[id] || id;
-        const tag = document.createElement("span");
-        tag.className = "src";
-        tag.textContent = "blocked at the source";
-        li.appendChild(name);
-        li.appendChild(tag);
-        ul.appendChild(li);
+        const nm = document.createElement("span"); nm.textContent = names[id] || id;
+        const tag = document.createElement("span"); tag.className = "src"; tag.textContent = "blocked at the source";
+        li.appendChild(nm); li.appendChild(tag); ul.appendChild(li);
       }
-      card.classList.toggle("empty", shown === 0);
-      card.hidden = false;
-      renderLifetime();
     };
-
     const ask = (tabId) => {
       const msg = { type: "blaikhole:getDetail" };
       let r;
@@ -147,12 +121,7 @@
       if (r && typeof r.then === "function") r.then(show, () => {});
       else { try { api.tabs.sendMessage(tabId, msg, show); } catch (e) { /* no content script here */ } }
     };
-
-    const pick = (tabs) => {
-      const tab = tabs && tabs[0];
-      if (tab && tab.id != null) ask(tab.id);
-    };
-
+    const pick = (tabs) => { const t = tabs && tabs[0]; if (t && t.id != null) ask(t.id); };
     try {
       const q = api.tabs.query({ active: true, currentWindow: true });
       if (q && typeof q.then === "function") q.then(pick, () => {});
@@ -160,8 +129,49 @@
     } catch (e) { /* ignore */ }
   }
 
+  // Share text leads with the user's number so the number does the convincing.
+  function shareText() {
+    const lead = lifetime > 0
+      ? ("I blocked " + lifetime.toLocaleString() + " bits of unwanted AI with Blaikhole. ")
+      : "I use Blaikhole to turn off unwanted AI. ";
+    return lead + "It is free, with no account and no tracking. Get it: " + SHARE_URL;
+  }
+
+  function flashShareMsg(text) {
+    const el = $("share-msg");
+    if (!el) return;
+    el.textContent = text;
+    el.hidden = false;
+    setTimeout(() => { el.hidden = true; }, 3500);
+  }
+
+  // Firefox desktop has no navigator.share, so copy-link is the real path there.
+  function copyFallback() {
+    const text = shareText();
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(
+        () => flashShareMsg("Link copied. Paste it anywhere."),
+        () => flashShareMsg("Copy this link: " + SHARE_URL)
+      );
+    } else {
+      flashShareMsg("Share this link: " + SHARE_URL);
+    }
+  }
+
+  function wireShare() {
+    const btn = $("share");
+    if (!btn) return;
+    btn.addEventListener("click", () => {
+      const data = { title: "Blaikhole", text: shareText(), url: SHARE_URL };
+      if (navigator.share) {
+        navigator.share(data).catch((e) => { if (e && e.name !== "AbortError") copyFallback(); });
+      } else {
+        copyFallback();
+      }
+    });
+  }
+
   function load() {
-    const got = api.storage.local.get("blaikhole");
     const apply = (res) => {
       const s = res && res.blaikhole;
       if (s && typeof s === "object") {
@@ -174,10 +184,15 @@
       renderMode();
       renderCustom();
       renderPill();
+      renderHero();
       renderPageStats();
+      wireShare();
     };
-    if (got && typeof got.then === "function") got.then(apply, () => apply(null));
-    else api.storage.local.get("blaikhole", apply);
+    try {
+      const got = api.storage.local.get("blaikhole");
+      if (got && typeof got.then === "function") got.then(apply, () => apply(null));
+      else api.storage.local.get("blaikhole", apply);
+    } catch (e) { apply(null); }
   }
 
   load();
