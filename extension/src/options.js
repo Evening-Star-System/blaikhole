@@ -7,8 +7,8 @@
   const LIST = (window.__BLAIKHOLE_LIST__ && Array.isArray(window.__BLAIKHOLE_LIST__.lists))
     ? window.__BLAIKHOLE_LIST__ : { lists: [] };
 
-  // Set to the live landing / add-on-store page before the first public launch.
-  const SHARE_URL = "https://blaikhole.eveningstar.app";
+  // Blaikhole's page on the Evening Star Productions studio hub. This is the locked canonical URL.
+  const SHARE_URL = "https://productions.eveningstar.app/blaikhole";
 
   let settings = { mode: "hide", enabled: {}, custom: [], pill: false };
   let lifetime = 0;
