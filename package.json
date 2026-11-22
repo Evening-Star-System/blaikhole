@@ -7,7 +7,8 @@
   "scripts": {
     "sync": "bash scripts/sync-list.sh",
     "test": "node test/engine.test.mjs && node test/capture.test.mjs",
-    "test:e2e": "node test/e2e.cjs"
+    "test:e2e": "node test/e2e.cjs",
+    "build:stores": "python3 scripts/build-stores.py"
   },
   "devDependencies": {
     "jsdom": "^31.0.1"

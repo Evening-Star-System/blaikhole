@@ -75,3 +75,4 @@ orrery-locks.results.json
 
 # dev test deps (jsdom). package.json + lock are committed so `npm test` and CI work for contributors.
 node_modules/
+dist/
